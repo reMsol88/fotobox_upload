@@ -53,7 +53,7 @@ def upload_file():
     # Speichere das Originalbild immer (aber gespiegelt!)
     with Image.open(temp_location) as img:
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
-        # img.save(file_location)
+        img.save(file_location)
 
         upload_result = cloudinary.uploader.upload(file_location, public_id=base_name)
         print(f"Uploaded image URL: {upload_result['secure_url']}")
@@ -66,7 +66,7 @@ def upload_file():
                     img_with_frame = img.copy()
                     img_with_frame.paste(frame, (0, 0), frame)
                     frame_location = os.path.join(UPLOAD_DIR, f"{base_name}_frame{ext}")
-                    # img_with_frame.save(frame_location)
+                    img_with_frame.save(frame_location)
                     upload_result = cloudinary.uploader.upload(frame_location, public_id=f"{base_name}_frame")
                     print(f"Uploaded image URL: {upload_result['secure_url']}")
             else:
