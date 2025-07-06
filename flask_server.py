@@ -6,6 +6,9 @@ import cloudinary
 import cloudinary.uploader
 from cloudinary.utils import cloudinary_url
 import dotenv
+import logging
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
 # Load environment variables from .env file
 dotenv.load_dotenv()
 
@@ -74,4 +77,4 @@ def upload_file():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render stellt PORT bereit
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=True)  # Setze debug=True für Entwicklungszwecke
