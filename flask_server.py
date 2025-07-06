@@ -56,7 +56,7 @@ def upload_file():
         img.save(file_location)
 
         upload_result = cloudinary.uploader.upload(file_location, public_id=base_name)
-        print(f"Uploaded image URL: {upload_result['secure_url']}")
+        logging.info(f"Uploaded image URL: {upload_result['secure_url']}")
         # Wenn frame_type gesetzt ist, speichere zusätzlich das Bild mit Rahmen
         if frame_type:
             frame_path = os.path.join(FRAME_DIR, frame_type)
@@ -68,7 +68,7 @@ def upload_file():
                     frame_location = os.path.join(UPLOAD_DIR, f"{base_name}_frame{ext}")
                     img_with_frame.save(frame_location)
                     upload_result = cloudinary.uploader.upload(frame_location, public_id=f"{base_name}_frame")
-                    print(f"Uploaded image URL: {upload_result['secure_url']}")
+                    logging.info(f"Uploaded framed image URL: {upload_result['secure_url']}")
             else:
                 print(f"Frame file not found: {frame_path}")
     os.remove(temp_location)
