@@ -163,7 +163,7 @@ function showLastPhoto(index, callback) {
   streamEl.style.display = "none";
   // Rahmen anzeigen, falls vorhanden
   if (photosWithFrame[index]) {
-    streamFrame.src = photosWithFrame[index];
+    streamFrame.src = "/static/" + photosWithFrame[index];
     streamFrame.style.display = "block";
   } else {
     streamFrame.style.display = "none";
@@ -172,7 +172,7 @@ function showLastPhoto(index, callback) {
     photoEl.style.display = "none";
     // Rahmen-Zustand für den Live-View wiederherstellen:
     if (frameVisible && frameType) {
-      streamFrame.src = frameType;
+      streamFrame.src = "/static/" + frameType;
       streamFrame.style.display = "block";
     } else {
       streamFrame.style.display = "none";
@@ -296,7 +296,7 @@ function showCollage(currentIndex = 4, callback) {
 
       if (photosWithFrame[i]) {
         const frame = document.createElement("img");
-        frame.src = photosWithFrame[i];
+        frame.src = "/static/" + photosWithFrame[i];
         frame.style.position = "absolute";
         frame.style.top = 0;
         frame.style.left = 0;
