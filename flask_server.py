@@ -30,6 +30,10 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 def serve_fotobox():
     return app.send_static_file("fotobox.html")
 
+@app.route("/lan")
+def serve_fotobox_lan():
+    return app.send_static_file("fotobox_lan.html")
+
 @app.route("/api", methods=["GET"])
 def read_root():
     return jsonify({"message": "API is running"})
