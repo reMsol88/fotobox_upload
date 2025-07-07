@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fotobox</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: black;
+      overflow: hidden;
+    }
+
+    #wrapper {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #stream, #photo {
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+    }
+
+    #photo {
+      display: none;
+    }
+
+    svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    circle {
+      fill: none;
+      stroke: red;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 301.59;
+      stroke-dashoffset: 301.59;
+    }
+
+    /* .collage-fade-in {
+      opacity: 1;
+      transition: opacity 0.8s;
+    } */
+    .collage-fade-out {
+      opacity: 0;
+      transition: opacity 0.8s;
+    }
+
+    #toggle-frame-btn,
+    #toggle-frame1-btn {
+      /* position: fixed; */
+      /* bottom: ...; */
+      /* right: ...; */
+      /* z-index: 50; */
+      width: 100px;
+      height: 90px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.7);
+      border-radius: 40%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+  </style>
+</head>
+<body>
+
+  <div id="wrapper">
+    <img id="stream" src="http://192.168.2.23:8080/video" alt="Live Stream" style="transform:scaleX(-1);">
+    <img id="stream-frame" src="flamingo.png" alt="Frame" style="position:absolute;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:15;">
+    <img id="photo" src="" alt="Captured Photo">
+    <div id="countdown" style="position:absolute;top:0;left:0;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;color:white;font-size:10rem;opacity:0;z-index:20;pointer-events:none;transition:all 0.4s;"></div>
+    <div id="flash" style="position:absolute;top:0;left:0;width:100vw;height:100vh;background:white;opacity:0;pointer-events:none;z-index:30;"></div>
+
+  <div style="position:fixed;bottom:24px;right:24px;z-index:50;display:flex;flex-direction:column;gap:12px;">
+    <div id="toggle-frame-btn" style="width:100px;height:90px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.7);border-radius:40%;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+      <img src="flamingo.png" alt="Rahmen 1" style="width:80px;height:60px;pointer-events:none;">
+    </div>
+    <div id="toggle-frame1-btn" style="width:100px;height:90px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.7);border-radius:40%;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+      <img src="flamingo1.png" alt="Rahmen 2" style="width:80px;height:60px;pointer-events:none;">
+    </div>
+  </div>
+
+  <script>
+const camIP = document.body.dataset.camIp;
+const streamEl = document.getElementById("stream");
+const photoEl = document.getElementById("photo");
+const countdownEl = document.getElementById("countdown");
+const flashEl = document.getElementById("flash");
+const streamFrame = document.getElementById("stream-frame");
+const toggleFrameBtn = document.getElementById("toggle-frame-btn");
+const toggleFrame1Btn = document.getElementById("toggle-frame1-btn");
+
+let busy = false;
+let photos = [];
+let photosWithFrame = [];
+let frameVisible = false;
+let frameType = null; // null, "flamingo.png", "flamingo1.png"
+streamFrame.style.display = "none";
+
+// Flamingo-Button
+toggleFrameBtn.addEventListener("click", () => {
+  frameVisible = !frameVisible || frameType !== "flamingo.png";
+  frameType = frameVisible ? "flamingo.png" : null;
+  streamFrame.src = "flamingo.png";
+  streamFrame.style.display = frameVisible ? "block" : "none";
+});
+
+// Flamingo1-Button
+toggleFrame1Btn.addEventListener("click", () => {
+  frameVisible = !frameVisible || frameType !== "flamingo1.png";
+  frameType = frameVisible ? "flamingo1.png" : null;
+  streamFrame.src = "flamingo1.png";
+  streamFrame.style.display = frameVisible ? "block" : "none";
+});
+
+streamEl.addEventListener("click", () => {
+  if (busy) return;
+  busy = true;
+  photos = [];
+  startPhotoSequence(0);
+});
+
+function startPhotoSequence(index) {
+  if (index >= 4) {
+    // Nach dem letzten Foto: Collage für 5 Sekunden anzeigen
+    showCollage(4, () => {
+      setTimeout(() => {
+        photos.forEach(url => URL.revokeObjectURL(url));
+        busy = false;
+        showStream();
+      }, 5000);
+    });
+    return;
+  }
+  showStream();
+  startCountdown(() => {
+    takePhoto(index, () => {
+      // Nach dem Foto: Zeige das zuletzt aufgenommene Foto für 3 Sekunden
+      showLastPhoto(index, () => {
+        startPhotoSequence(index + 1);
+      });
+    });
+  });
+}
+
+// Neue Funktion: Zeigt das zuletzt aufgenommene Foto für 3 Sekunden
+function showLastPhoto(index, callback) {
+  photoEl.src = photos[index];
+  photoEl.style.display = "block";
+  photoEl.style.transform = "scaleX(-1)";
+  streamEl.style.display = "none";
+  // Rahmen anzeigen, falls vorhanden
+  if (photosWithFrame[index]) {
+    streamFrame.src = photosWithFrame[index];
+    streamFrame.style.display = "block";
+  } else {
+    streamFrame.style.display = "none";
+  }
+  setTimeout(() => {
+    photoEl.style.display = "none";
+    // Rahmen-Zustand für den Live-View wiederherstellen:
+    if (frameVisible && frameType) {
+      streamFrame.src = frameType;
+      streamFrame.style.display = "block";
+    } else {
+      streamFrame.style.display = "none";
+    }
+    if (callback) callback();
+  }, 3000);
+}
+
+// Neue Countdown-Animation mit Blitz
+function startCountdown(callback) {
+  const sequence = ["3", "2", "1"];
+  let idx = 0;
+
+  function showNext() {
+    if (idx >= sequence.length) {
+      triggerFlash(callback); // Callback direkt beim Start des Blitzes!
+      setTimeout(() => {
+        countdownEl.style.opacity = 0;
+      }, 300);
+      return;
+    }
+    countdownEl.textContent = sequence[idx];
+    countdownEl.style.opacity = 1;
+    countdownEl.style.transform = "scale(1)";
+    countdownEl.style.transition = "all 0.4s";
+    setTimeout(() => {
+      countdownEl.style.opacity = 0;
+      countdownEl.style.transform = "scale(0.8)";
+      idx++;
+      setTimeout(showNext, 400);
+    }, 1000);
+  }
+
+  function triggerFlash(cb) {
+    flashEl.style.opacity = 1;
+    flashEl.style.transition = "opacity 0.3s";
+    if (cb) cb(); // <-- Fotoaufnahme direkt hier starten!
+    setTimeout(() => {
+      flashEl.style.opacity = 0;
+    }, 1200);
+  }
+
+  showNext();
+}
+
+function takePhoto(index, callback) {
+  let frameWasVisible = frameVisible;
+  let frameUsed = frameType; // z.B. "flamingo.png" oder null
+  if (!frameWasVisible) {
+    streamFrame.style.display = "none";
+  }
+
+  streamEl.style.display = "none";
+  photoEl.style.display = "block";
+  const photoUrl = `http://${camIP}/photo.jpg?${Date.now()}`;
+  
+  // photoEl.src = photoUrl;
+
+  fetch(photoUrl)
+    .then(response => response.blob())
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      photos[index] = url;
+      photosWithFrame[index] = frameUsed; // Merke den Dateinamen
+
+      const formData = new FormData();
+      formData.append('file', blob, `photo_${Date.now()}.jpg`);
+      formData.append('frame_type', frameUsed || '');
+      fetch('https://fotobox-upload.onrender.com/upload', {
+        method: 'POST',
+        body: formData
+      }).catch(err => {
+        console.error('Upload fehlgeschlagen:', err);
+      });
+
+      if (frameWasVisible) {
+        streamFrame.style.display = "block";
+      }
+      if (callback) callback();
+    });
+}
+
+function showStream() {
+  photoEl.style.display = "none";
+  streamEl.style.display = "block";
+}
+
+function showCollage(currentIndex = 4, callback) {
+  let collage = document.getElementById("collage");
+  if (!collage) {
+    collage = document.createElement("div");
+    collage.id = "collage";
+    collage.style.position = "absolute";
+    collage.style.top = "0";
+    collage.style.left = "0";
+    collage.style.width = "100vw";
+    collage.style.height = "100vh";
+    collage.style.display = "grid";
+    collage.style.gridTemplateColumns = "1fr 1fr";
+    collage.style.gridTemplateRows = "1fr 1fr";
+    collage.style.zIndex = "20";
+    collage.style.background = "black";
+    document.body.appendChild(collage);
+  }
+  collage.innerHTML = "";
+  for (let i = 0; i < 4; i++) {
+    const container = document.createElement("div");
+    container.style.position = "relative";
+    container.style.width = "100%";
+    container.style.height = "100%";
+    container.style.overflow = "hidden";
+    if (i < currentIndex && photos[i]) {
+      const img = document.createElement("img");
+      img.src = photos[i];
+      img.style.width = "100%";
+      img.style.height = "100%";
+      img.style.objectFit = "cover";
+      img.style.display = "block";
+      img.style.transform = "scaleX(-1)";
+      container.appendChild(img);
+
+      if (photosWithFrame[i]) {
+        const frame = document.createElement("img");
+        frame.src = photosWithFrame[i];
+        frame.style.position = "absolute";
+        frame.style.top = 0;
+        frame.style.left = 0;
+        frame.style.width = "100%";
+        frame.style.height = "100%";
+        frame.style.pointerEvents = "none";
+        container.appendChild(frame);
+      }
+    } else {
+      const placeholder = document.createElement("div");
+      placeholder.style.background = "black";
+      placeholder.style.width = "100%";
+      placeholder.style.height = "100%";
+      container.appendChild(placeholder);
+    }
+    collage.appendChild(container);
+  }
+  collage.style.display = "grid";
+  streamEl.style.display = "none";
+  photoEl.style.display = "none";
+
+  const displayTime = currentIndex === 4 ? 8000 : 2000;
+
+  setTimeout(() => {
+    showStream(); // Live-Stream sofort wieder anzeigen
+    if (collage && collage.parentNode) {
+      collage.parentNode.removeChild(collage);
+    }
+    if (callback) callback();
+  }, displayTime);
+}
+
+</script>
+
+</body>
+</html>

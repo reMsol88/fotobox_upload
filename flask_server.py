@@ -8,25 +8,29 @@ from cloudinary.utils import cloudinary_url
 import dotenv
 import logging
 # Set up logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 # Load environment variables from .env file
 dotenv.load_dotenv()
 
 # Configuration
 cloudinary.config(
-    cloud_name="dhkhinrl2",
-    api_key="488992739588361",
-    api_secret=os.getenv("CLOUDINARY_SECRET"),  # Click 'View API Keys' above to copy your API secret
+    cloud_name=os.getenv("CLOUDINARY_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_SECRET"),
     secure=True
 )
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 
 UPLOAD_DIR = "./uploads"
 FRAME_DIR = "./frames"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-@app.route("/", methods=["GET"])
+@app.route("/")
+def serve_fotobox():
+    return app.send_static_file("fotobox.html")
+
+@app.route("/api", methods=["GET"])
 def read_root():
     return jsonify({"message": "API is running"})
 
@@ -77,4 +81,4 @@ def upload_file():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render stellt PORT bereit
-    app.run(host="0.0.0.0", port=port, debug=True)  # Setze debug=True für Entwicklungszwecke
+    app.run(host="0.0.0.0", port=port, debug=False)  # Setze debug=True für Entwicklungszwecke
