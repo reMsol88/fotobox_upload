@@ -78,17 +78,17 @@
 
   <div id="wrapper">
     <img id="stream" src="http://192.168.2.23:8080/video" alt="Live Stream" style="transform:scaleX(-1);">
-    <img id="stream-frame" src="flamingo.png" alt="Frame" style="position:absolute;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:15;">
+    <img id="stream-frame" src="/static/flamingo.png" alt="Frame" style="position:absolute;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:15;">
     <img id="photo" src="" alt="Captured Photo">
     <div id="countdown" style="position:absolute;top:0;left:0;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;color:white;font-size:10rem;opacity:0;z-index:20;pointer-events:none;transition:all 0.4s;"></div>
     <div id="flash" style="position:absolute;top:0;left:0;width:100vw;height:100vh;background:white;opacity:0;pointer-events:none;z-index:30;"></div>
 
   <div style="position:fixed;bottom:24px;right:24px;z-index:50;display:flex;flex-direction:column;gap:12px;">
     <div id="toggle-frame-btn" style="width:100px;height:90px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.7);border-radius:40%;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
-      <img src="flamingo.png" alt="Rahmen 1" style="width:80px;height:60px;pointer-events:none;">
+      <img src="/static/flamingo.png" alt="Rahmen 1" style="width:80px;height:60px;pointer-events:none;">
     </div>
     <div id="toggle-frame1-btn" style="width:100px;height:90px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.7);border-radius:40%;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
-      <img src="flamingo1.png" alt="Rahmen 2" style="width:80px;height:60px;pointer-events:none;">
+      <img src="/static/flamingo1.png" alt="Rahmen 2" style="width:80px;height:60px;pointer-events:none;">
     </div>
   </div>
 
@@ -113,7 +113,7 @@ streamFrame.style.display = "none";
 toggleFrameBtn.addEventListener("click", () => {
   frameVisible = !frameVisible || frameType !== "flamingo.png";
   frameType = frameVisible ? "flamingo.png" : null;
-  streamFrame.src = "flamingo.png";
+  streamFrame.src = "/static/flamingo.png";
   streamFrame.style.display = frameVisible ? "block" : "none";
 });
 
@@ -121,7 +121,7 @@ toggleFrameBtn.addEventListener("click", () => {
 toggleFrame1Btn.addEventListener("click", () => {
   frameVisible = !frameVisible || frameType !== "flamingo1.png";
   frameType = frameVisible ? "flamingo1.png" : null;
-  streamFrame.src = "flamingo1.png";
+  streamFrame.src = "/static/flamingo1.png";
   streamFrame.style.display = frameVisible ? "block" : "none";
 });
 
