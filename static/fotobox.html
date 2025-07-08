@@ -226,6 +226,7 @@ function startCountdown(callback) {
     if (cb) cb();
     setTimeout(() => {
       flashEl.style.opacity = 0;
+      flashEl.style.transition = "opacity 0.8s";
     }, 1200);
   }
 
