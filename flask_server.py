@@ -14,9 +14,9 @@ dotenv.load_dotenv()
 
 # Configuration
 cloudinary.config(
-    cloud_name=os.getenv("CLOUDINARY_NAME"),
-    api_key=os.getenv("CLOUDINARY_API_KEY"),
-    api_secret=os.getenv("CLOUDINARY_SECRET"),
+    cloud_name=os.getenv("CLOUDINARY_NAME",""),
+    api_key=os.getenv("CLOUDINARY_API_KEY",""),
+    api_secret=os.getenv("CLOUDINARY_SECRET",""),
     secure=True
 )
 
@@ -41,6 +41,11 @@ def read_root():
 
 @app.route("/upload", methods=["POST"])
 def upload_file():
+    key = request.headers.get("X-API-KEY")
+    if key != os.getenv("UPLOAD_KEY"):
+        logging.warning(f"Unauthorized upload attempt with key: {key}")
+        return "Unauthorized", 401
+    
     file = request.files.get("file")
     frame_type = request.form.get("frame_type")
 

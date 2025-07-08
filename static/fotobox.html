@@ -104,6 +104,8 @@ const camIP = getQueryParam("camip") || "192.168.49.174:8080"; // Fallback-IP
 document.body.dataset.camIp = camIP;
 document.getElementById("stream").src = `https://${camIP}/video`;
 
+const upload_key = getQueryParam("upload_key") || ""; // Fallback-Upload-Key
+
 const streamEl = document.getElementById("stream");
 const photoEl = document.getElementById("photo");
 const countdownEl = document.getElementById("countdown");
@@ -231,7 +233,7 @@ function startCountdown(callback) {
 
 function takePhoto(index, callback) {
   let frameWasVisible = frameVisible;
-  let frameUsed = frameType; // z.B. "flamingo.png" oder null
+  let frameUsed = frameType;
   if (!frameWasVisible) {
     streamFrame.style.display = "none";
   }
@@ -239,40 +241,37 @@ function takePhoto(index, callback) {
   streamEl.style.display = "none";
   photoEl.style.display = "block";
   const photoUrl = `https://${camIP}/photo.jpg?${Date.now()}`;
-  
-  // photoEl.src = photoUrl;
 
   fetch(photoUrl)
     .then(response => response.blob())
     .then(blob => {
       const url = URL.createObjectURL(blob);
       photos[index] = url;
-      photosWithFrame[index] = frameUsed; // Merke den Dateinamen
+      photosWithFrame[index] = frameUsed;
 
       const formData = new FormData();
       formData.append('file', blob, `photo_${Date.now()}.jpg`);
       formData.append('frame_type', frameUsed || '');
       fetch('https://fotobox-upload.onrender.com/upload', {
+      // fetch('http://localhost:5000/upload', {
         method: 'POST',
-        body: formData
+        body: formData,
+        headers: {
+          "X-API-KEY": upload_key,
+        },
       })
       .then(response => response.text())
-      .then(url => {
-        photos_server[index] = url; // Jetzt ist photos_server[i] die echte Bild-URL vom Server!
-        photosWithFrame[index] = frameUsed;
+      .then(serverUrl => {
+        photos_server[index] = serverUrl; // Nur hier setzen!
         if (frameWasVisible) {
           streamFrame.style.display = "block";
         }
         if (callback) callback();
       })
-.catch(err => {
+      .catch(err => {
         console.error('Upload fehlgeschlagen:', err);
+        if (callback) callback(); // Optional: trotzdem weitermachen
       });
-
-      if (frameWasVisible) {
-        streamFrame.style.display = "block";
-      }
-      if (callback) callback();
     });
 }
 
