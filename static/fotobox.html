@@ -185,7 +185,6 @@ function showLastPhoto(index, callback) {
   }
   setTimeout(() => {
     photoEl.style.display = "none";
-    // Rahmen-Zustand für den Live-View wiederherstellen:
     if (frameVisible && frameType) {
       streamFrame.src = "/static/" + frameType;
       streamFrame.style.display = "block";
@@ -203,7 +202,7 @@ function startCountdown(callback) {
 
   function showNext() {
     if (idx >= sequence.length) {
-      triggerFlash(callback); // Callback direkt beim Start des Blitzes!
+      triggerFlash(callback); 
       setTimeout(() => {
         countdownEl.style.opacity = 0;
       }, 300);
@@ -224,7 +223,7 @@ function startCountdown(callback) {
   function triggerFlash(cb) {
     flashEl.style.opacity = 1;
     flashEl.style.transition = "opacity 0.3s";
-    if (cb) cb(); // <-- Fotoaufnahme direkt hier starten!
+    if (cb) cb();
     setTimeout(() => {
       flashEl.style.opacity = 0;
     }, 1200);
@@ -251,11 +250,17 @@ function takePhoto(index, callback) {
       photos[index] = url;
       photosWithFrame[index] = frameUsed;
 
+      // Zeige das Foto sofort an, sobald es geladen ist!
+      showLastPhoto(index, () => {
+        if (callback) callback();
+      });
+
+      // Upload im Hintergrund starten, aber nicht auf showLastPhoto warten!
       const formData = new FormData();
       formData.append('file', blob, `photo_${Date.now()}.jpg`);
       formData.append('frame_type', frameUsed || '');
       fetch('https://fotobox-upload.onrender.com/upload', {
-      // fetch('http://localhost:5000/upload', {
+        // fetch('http://localhost:5000/upload', {
         method: 'POST',
         body: formData,
         headers: {
@@ -264,15 +269,14 @@ function takePhoto(index, callback) {
       })
       .then(response => response.text())
       .then(serverUrl => {
-        photos_server[index] = serverUrl; // Nur hier setzen!
+        photos_server[index] = serverUrl;
         if (frameWasVisible) {
           streamFrame.style.display = "block";
         }
-        if (callback) callback();
+        // Kein callback-Aufruf mehr hier!
       })
       .catch(err => {
         console.error('Upload fehlgeschlagen:', err);
-        if (callback) callback(); // Optional: trotzdem weitermachen
       });
     });
 }
@@ -282,7 +286,7 @@ function showStream() {
   streamEl.style.display = "block";
 }
 
-let lastCollageData = null; // Speichert die Daten der letzten Galerie
+let lastCollageData = null; 
 
 function renderCollageGrid(container, photosArr, framesArr, qrArr) {
   container.innerHTML = "";
