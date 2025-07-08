@@ -142,6 +142,7 @@ streamEl.addEventListener("click", () => {
   busy = true;
   photos = [];
   photos_server = [];
+  photos.forEach(url => URL.revokeObjectURL(url));
   startPhotoSequence(0);
 });
 
@@ -149,8 +150,9 @@ function startPhotoSequence(index) {
   if (index >= 4) {
     // Nach dem letzten Foto: Collage für 5 Sekunden anzeigen
     showCollage(4, () => {
+      showQrButtonFor30s(); // <--- Button nach Galerie anzeigen
       setTimeout(() => {
-        photos.forEach(url => URL.revokeObjectURL(url));
+        // photos.forEach(url => URL.revokeObjectURL(url));
         busy = false;
         showStream();
       }, 5000);
@@ -280,7 +282,71 @@ function showStream() {
   streamEl.style.display = "block";
 }
 
+let lastCollageData = null; // Speichert die Daten der letzten Galerie
+
+function renderCollageGrid(container, photosArr, framesArr, qrArr) {
+  container.innerHTML = "";
+  for (let i = 0; i < 4; i++) {
+    const cell = document.createElement("div");
+    cell.style.position = "relative";
+    cell.style.width = "100%";
+    cell.style.height = "100%";
+    cell.style.overflow = "hidden";
+    cell.style.background = "black";
+    if (photosArr[i]) {
+      const img = document.createElement("img");
+      img.src = photosArr[i];
+      img.style.width = "100%";
+      img.style.height = "100%";
+      img.style.objectFit = "cover";
+      img.style.display = "block";
+      img.style.transform = "scaleX(-1)";
+      cell.appendChild(img);
+
+      if (framesArr[i]) {
+        const frame = document.createElement("img");
+        frame.src = "/static/" + framesArr[i];
+        frame.style.position = "absolute";
+        frame.style.top = 0;
+        frame.style.left = 0;
+        frame.style.width = "100%";
+        frame.style.height = "100%";
+        frame.style.pointerEvents = "none";
+        cell.appendChild(frame);
+      }
+
+      // QR-Code oben links
+      if (qrArr && qrArr[i]) {
+        const qrDiv = document.createElement("div");
+        qrDiv.style.position = "absolute";
+        qrDiv.style.top = "10px";
+        qrDiv.style.left = "10px";
+        qrDiv.style.background = "rgba(255,255,255,0.8)";
+        qrDiv.style.padding = "6px";
+        qrDiv.style.borderRadius = "8px";
+        qrDiv.style.zIndex = "30";
+        cell.appendChild(qrDiv);
+
+        new QRCode(qrDiv, {
+          text: qrArr[i],
+          width: 100,
+          height: 100,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+      }
+    }
+    container.appendChild(cell);
+  }
+}
+
+// Passe showCollage an:
 function showCollage(currentIndex = 4, callback) {
+  // Frame-Buttons ausblenden
+  toggleFrameBtn.style.display = "none";
+  toggleFrame1Btn.style.display = "none";
+
   let collage = document.getElementById("collage");
   if (!collage) {
     collage = document.createElement("div");
@@ -298,76 +364,99 @@ function showCollage(currentIndex = 4, callback) {
     document.body.appendChild(collage);
   }
   collage.innerHTML = "";
-  for (let i = 0; i < 4; i++) {
-    const container = document.createElement("div");
-    container.style.position = "relative";
-    container.style.width = "100%";
-    container.style.height = "100%";
-    container.style.overflow = "hidden";
-    if (i < currentIndex && photos[i]) {
-      const img = document.createElement("img");
-      img.src = photos[i];
-      img.style.width = "100%";
-      img.style.height = "100%";
-      img.style.objectFit = "cover";
-      img.style.display = "block";
-      img.style.transform = "scaleX(-1)";
-      container.appendChild(img);
-
-      if (photosWithFrame[i]) {
-        const frame = document.createElement("img");
-        frame.src = "/static/" + photosWithFrame[i];
-        frame.style.position = "absolute";
-        frame.style.top = 0;
-        frame.style.left = 0;
-        frame.style.width = "100%";
-        frame.style.height = "100%";
-        frame.style.pointerEvents = "none";
-        container.appendChild(frame);
-      }
-
-      // QR-Code für das lokale Bild anzeigen
-      const qrDiv = document.createElement("div");
-      qrDiv.style.position = "absolute";
-      qrDiv.style.top = "10px";
-      qrDiv.style.right = "10px";
-      qrDiv.style.background = "rgba(255,255,255,0.8)";
-      qrDiv.style.padding = "6px";
-      qrDiv.style.borderRadius = "8px";
-      qrDiv.style.zIndex = "30";
-      container.appendChild(qrDiv);
-
-      // Erzeuge QR-Code mit der lokalen URL (hier: photos[i])
-      new QRCode(qrDiv, {
-        text: photos_server[i],
-        width: 100,
-        height: 100,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-      });
-    } else {
-      const placeholder = document.createElement("div");
-      placeholder.style.background = "black";
-      placeholder.style.width = "100%";
-      placeholder.style.height = "100%";
-      container.appendChild(placeholder);
-    }
-    collage.appendChild(container);
-  }
   collage.style.display = "grid";
   streamEl.style.display = "none";
   photoEl.style.display = "none";
 
-  const displayTime = currentIndex === 4 ? 15000 : 2000;
+  renderCollageGrid(
+    collage,
+    photos.slice(0, currentIndex),
+    photosWithFrame.slice(0, currentIndex),
+    null // photos_server.slice(0, currentIndex)
+  );
+
+  const displayTime = currentIndex === 4 ? 10000 : 2000;
 
   setTimeout(() => {
-    showStream(); // Live-Stream sofort wieder anzeigen
+    showStream();
     if (collage && collage.parentNode) {
       collage.parentNode.removeChild(collage);
     }
+    // Frame-Buttons wieder einblenden
+    toggleFrameBtn.style.display = "flex";
+    toggleFrame1Btn.style.display = "flex";
     if (callback) callback();
   }, displayTime);
+
+  if (currentIndex === 4) {
+    lastCollageData = {
+      photos: [...photos],
+      photosWithFrame: [...photosWithFrame],
+      photos_server: [...photos_server]
+    };
+  }
+}
+
+// Passe showQrOverlay an:
+function showQrOverlay() {
+  // Frame-Buttons ausblenden
+  toggleFrameBtn.style.display = "none";
+  toggleFrame1Btn.style.display = "none";
+
+  let overlay = document.getElementById("qr-overlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "qr-overlay";
+    overlay.style.position = "fixed";
+    overlay.style.top = 0;
+    overlay.style.left = 0;
+    overlay.style.width = "100vw";
+    overlay.style.height = "100vh";
+    overlay.style.background = "rgba(0,0,0,0.95)";
+    overlay.style.zIndex = "1000";
+    overlay.innerHTML = `
+      <div id="qr-collage" style="position:absolute;top:0;left:0;width:100vw;height:100vh;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;z-index:1001;"></div>
+      <button id="close-qr-overlay" style="position:absolute;top:24px;right:24px;border-radius:8px;background:rgba(255,255,255,0.7);font-size:2rem;padding:0.5em 1em;z-index:1010;">Zurück</button>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById("close-qr-overlay").onclick = () => {
+      overlay.remove();
+      // Frame-Buttons wieder einblenden
+      toggleFrameBtn.style.display = "flex";
+      toggleFrame1Btn.style.display = "flex";
+      // photos.forEach(url => URL.revokeObjectURL(url));
+    };
+  }
+  renderCollageGrid(
+    document.getElementById("qr-collage"),
+    lastCollageData.photos,
+    lastCollageData.photosWithFrame,
+    lastCollageData.photos_server
+  );
+}
+
+// Button nach der Galerie anzeigen
+function showQrButtonFor30s() {
+  let btn = document.getElementById("show-qr-btn");
+  if (!btn) {
+    btn = document.createElement("button");
+    btn.id = "show-qr-btn";
+    btn.textContent = "Du willst die Fotos?";
+    btn.style.position = "fixed";
+    btn.style.top = "24px";
+    btn.style.right = "24px";
+    btn.style.zIndex = "999";
+    btn.style.fontSize = "1.5rem";
+    btn.style.padding = "0.5em 1em";
+    btn.style.borderRadius = "8px";
+    btn.style.background = "rgba(255,255,255,0.7)";
+    document.body.appendChild(btn);
+    btn.onclick = showQrOverlay;
+  }
+  btn.style.display = "block";
+  setTimeout(() => {
+    btn.style.display = "none";
+  }, 30000);
 }
 
 </script>
