@@ -31,9 +31,9 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 def serve_fotobox():
     return app.send_static_file("fotobox.html")
 
-@app.route("/lan")
-def serve_fotobox_lan():
-    return app.send_static_file("fotobox_lan.html")
+@app.route("/fotobox.html")
+def serve_fotobox_html():
+    return app.send_static_file("fotobox.html")
 
 @app.route("/api", methods=["GET"])
 def read_root():

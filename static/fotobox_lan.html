@@ -93,8 +93,17 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script>
-const camIP = document.body.dataset.camIp;
+  <script>    
+  // Hilfsfunktion zum Auslesen von URL-Parametern
+function getQueryParam(name) {
+  const url = new URL(window.location.href);
+  return url.searchParams.get(name);
+}
+
+const camIP = getQueryParam("camip") || "192.168.49.174:8080"; // Fallback-IP
+document.body.dataset.camIp = camIP;
+document.getElementById("stream").src = `https://${camIP}/video`;
+
 const streamEl = document.getElementById("stream");
 const photoEl = document.getElementById("photo");
 const countdownEl = document.getElementById("countdown");
