@@ -92,6 +92,7 @@
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
 const camIP = document.body.dataset.camIp;
 const streamEl = document.getElementById("stream");
@@ -129,6 +130,7 @@ streamEl.addEventListener("click", () => {
   if (busy) return;
   busy = true;
   photos = [];
+  photos_server = [];
   startPhotoSequence(0);
 });
 
@@ -241,10 +243,21 @@ function takePhoto(index, callback) {
       const formData = new FormData();
       formData.append('file', blob, `photo_${Date.now()}.jpg`);
       formData.append('frame_type', frameUsed || '');
-      fetch('https://fotobox-upload.onrender.com/upload', {
+      // fetch('https://fotobox-upload.onrender.com/upload', {
+      fetch('http://192.168.2.108:5000/upload', {
         method: 'POST',
         body: formData
-      }).catch(err => {
+      })
+      .then(response => response.text())
+      .then(url => {
+        photos_server[index] = url; // Jetzt ist photos_server[i] die echte Bild-URL vom Server!
+        photosWithFrame[index] = frameUsed;
+        if (frameWasVisible) {
+          streamFrame.style.display = "block";
+        }
+        if (callback) callback();
+      })
+      .catch(err => {
         console.error('Upload fehlgeschlagen:', err);
       });
 
@@ -305,6 +318,27 @@ function showCollage(currentIndex = 4, callback) {
         frame.style.pointerEvents = "none";
         container.appendChild(frame);
       }
+
+      // QR-Code für das lokale Bild anzeigen
+      const qrDiv = document.createElement("div");
+      qrDiv.style.position = "absolute";
+      qrDiv.style.top = "10px";
+      qrDiv.style.right = "10px";
+      qrDiv.style.background = "rgba(255,255,255,0.8)";
+      qrDiv.style.padding = "6px";
+      qrDiv.style.borderRadius = "8px";
+      qrDiv.style.zIndex = "30";
+      container.appendChild(qrDiv);
+
+      // Erzeuge QR-Code mit der lokalen URL (hier: photos[i])
+      new QRCode(qrDiv, {
+        text: photos_server[i],
+        width: 100,
+        height: 100,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
     } else {
       const placeholder = document.createElement("div");
       placeholder.style.background = "black";
@@ -318,7 +352,7 @@ function showCollage(currentIndex = 4, callback) {
   streamEl.style.display = "none";
   photoEl.style.display = "none";
 
-  const displayTime = currentIndex === 4 ? 8000 : 2000;
+  const displayTime = currentIndex === 4 ? 15000 : 2000;
 
   setTimeout(() => {
     showStream(); // Live-Stream sofort wieder anzeigen

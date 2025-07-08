@@ -22,8 +22,9 @@ cloudinary.config(
 
 app = Flask(__name__, static_folder='static')
 
-UPLOAD_DIR = "./uploads"
-FRAME_DIR = "./frames"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+FRAME_DIR = os.path.join(BASE_DIR, "frames")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @app.route("/")
@@ -62,7 +63,7 @@ def upload_file():
     with Image.open(temp_location) as img:
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
         img.save(file_location)
-
+        logging.info(f"Saved original image to {file_location}")
         upload_result = cloudinary.uploader.upload(file_location, public_id=base_name)
         logging.info(f"Uploaded image URL: {upload_result['secure_url']}")
         # Wenn frame_type gesetzt ist, speichere zusätzlich das Bild mit Rahmen
@@ -75,13 +76,15 @@ def upload_file():
                     img_with_frame.paste(frame, (0, 0), frame)
                     frame_location = os.path.join(UPLOAD_DIR, f"{base_name}_frame{ext}")
                     img_with_frame.save(frame_location)
+                    logging.info(f"Saved framed image to {frame_location}")
                     upload_result = cloudinary.uploader.upload(frame_location, public_id=f"{base_name}_frame")
                     logging.info(f"Uploaded framed image URL: {upload_result['secure_url']}")
             else:
                 print(f"Frame file not found: {frame_path}")
     os.remove(temp_location)
 
-    return "OK", 200
+    rel_url = upload_result['secure_url']
+    return rel_url, 200
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render stellt PORT bereit
